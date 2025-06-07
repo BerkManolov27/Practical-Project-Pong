@@ -25,6 +25,8 @@ class PongGame
     static Random random = new Random();
 
     static bool isAI = true;
+    static int aiLevel = 2;
+    static bool gameRunning = true;
 
     static void Main()
     {
@@ -36,7 +38,7 @@ class PongGame
         Console.Clear();
         DrawField();
 
-        while (true)
+        while (gameRunning)
         {
             DrawScore();
             DrawRackets();
@@ -45,6 +47,8 @@ class PongGame
             Thread.Sleep(60);
 
             HandlePlayerInput();
+            if (!gameRunning) break;
+
             if (isAI)
                 HandleAI();
             else
@@ -62,6 +66,10 @@ class PongGame
                 break;
             }
         }
+
+        Console.ForegroundColor = ConsoleColor.Gray;
+        Console.WriteLine("\nGame over. Press any key to exit...");
+        Console.ReadKey();
     }
 
     static void ShowMenu()
@@ -79,6 +87,7 @@ class PongGame
             if (key == ConsoleKey.D1 || key == ConsoleKey.NumPad1)
             {
                 isAI = true;
+                ChooseAIDifficulty();
                 break;
             }
             else if (key == ConsoleKey.D2 || key == ConsoleKey.NumPad2)
@@ -86,6 +95,24 @@ class PongGame
                 isAI = false;
                 break;
             }
+        }
+    }
+
+    static void ChooseAIDifficulty()
+    {
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine("Select AI Difficulty:");
+        Console.WriteLine("1. Easy");
+        Console.WriteLine("2. Medium");
+        Console.WriteLine("3. Hard");
+        Console.ResetColor();
+
+        while (true)
+        {
+            ConsoleKey key = Console.ReadKey(true).Key;
+            if (key == ConsoleKey.D1 || key == ConsoleKey.NumPad1) { aiLevel = 1; break; }
+            if (key == ConsoleKey.D2 || key == ConsoleKey.NumPad2) { aiLevel = 2; break; }
+            if (key == ConsoleKey.D3 || key == ConsoleKey.NumPad3) { aiLevel = 3; break; }
         }
     }
 
@@ -103,8 +130,8 @@ class PongGame
     static void DrawScore()
     {
         Console.ForegroundColor = ConsoleColor.Cyan;
-        string score = $"   {leftScore}  |  {rightScore}   ";
-        int x = fieldHeight / 2 - score.Length / 2;
+        string score = $"   {leftScore}  |  {rightScore}   (Press ESC to quit)";
+        int x = Math.Max(0, (fieldHeight / 2 - score.Length / 2));
         Console.SetCursorPosition(x, fieldWidth + 1);
         Console.Write(score);
         Console.ResetColor();
@@ -160,6 +187,12 @@ class PongGame
         {
             var key = Console.ReadKey(true).Key;
 
+            if (key == ConsoleKey.Escape)
+            {
+                gameRunning = false;
+                return;
+            }
+
             if (key == ConsoleKey.W && leftRacketY > 1)
                 leftRacketY--;
             else if (key == ConsoleKey.S && leftRacketY + racketLength < fieldWidth)
@@ -173,6 +206,12 @@ class PongGame
         {
             var key = Console.ReadKey(true).Key;
 
+            if (key == ConsoleKey.Escape)
+            {
+                gameRunning = false;
+                return;
+            }
+
             if (key == ConsoleKey.UpArrow && rightRacketY > 1)
                 rightRacketY--;
             else if (key == ConsoleKey.DownArrow && rightRacketY + racketLength < fieldWidth)
@@ -182,10 +221,21 @@ class PongGame
 
     static void HandleAI()
     {
-        if (ballY < rightRacketY + racketLength / 2 && rightRacketY > 1)
-            rightRacketY--;
-        else if (ballY > rightRacketY + racketLength / 2 && rightRacketY + racketLength < fieldWidth)
-            rightRacketY++;
+        int chance = aiLevel switch
+        {
+            1 => 3,
+            2 => 2,
+            3 => 1,
+            _ => 2
+        };
+
+        if (random.Next(chance) == 0)
+        {
+            if (ballY < rightRacketY + racketLength / 2 && rightRacketY > 1)
+                rightRacketY--;
+            else if (ballY > rightRacketY + racketLength / 2 && rightRacketY + racketLength < fieldWidth)
+                rightRacketY++;
+        }
     }
 
     static void MoveBall()
